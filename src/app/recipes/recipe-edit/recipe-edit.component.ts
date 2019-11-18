@@ -66,4 +66,13 @@ export class RecipeEditComponent implements OnInit {
     return (<FormArray>this.form.get('ingredients')).controls;
   }
 
+  onAddIngredient() {
+    (<FormArray>this.form.get('ingredients')).push(
+      new FormGroup({
+        'name': new FormControl(),
+        'amount': new FormControl()
+      })
+    );
+  }
+
 }
