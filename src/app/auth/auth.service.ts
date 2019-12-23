@@ -1,7 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
 
-interface AuthResponseData {
+export interface AuthResponseData {
   idToken: string;
   email: string;
   refreshToken: string;
@@ -15,8 +16,8 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  signUp(email: string, password: string) {
-    this.http.post<AuthResponseData>(
+  signUp(email: string, password: string): Observable<AuthResponseData> {
+    return this.http.post<AuthResponseData>(
       this.url,
       {
         email: email,
