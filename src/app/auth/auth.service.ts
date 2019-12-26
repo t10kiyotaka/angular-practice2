@@ -9,17 +9,19 @@ export interface AuthResponseData {
   refreshToken: string;
   expiresIn: string;
   localId: string;
+  registered?: boolean;
 }
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
-  url = 'https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=AIzaSyD2LuhpYrAoJspCizXQmIwL02aVyEBuF0k'
+  apiKey = 'AIzaSyD2LuhpYrAoJspCizXQmIwL02aVyEBuF0k';
 
   constructor(private http: HttpClient) {}
 
   signUp(email: string, password: string) {
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.apiKey}`;
     return this.http.post<AuthResponseData>(
-      this.url,
+      url,
       {
         email: email,
         password: password,
@@ -41,5 +43,17 @@ export class AuthService {
         return throwError(errorMessage);
       })
     );
+  }
+
+  login(email: string, password: string) {
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.apiKey}`;
+    return this.http.post<AuthResponseData>(
+      url,
+      {
+        email: email,
+        password: password,
+        returnSecureToken: true
+      }
+    )
   }
 }
