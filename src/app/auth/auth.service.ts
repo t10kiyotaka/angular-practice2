@@ -18,8 +18,17 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
-  signUp(email: string, password: string) {
+  signUp(email: string, password: string): Observable<AuthResponseData> {
     const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.apiKey}`;
+    return this.auth(email, password, url)
+  }
+
+  login(email: string, password: string): Observable<AuthResponseData> {
+    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.apiKey}`;
+    return this.auth(email, password, url)
+  }
+
+  private auth(email: string, password: string, url: string): Observable<AuthResponseData> {
     return this.http.post<AuthResponseData>(
       url,
       {
@@ -36,24 +45,23 @@ export class AuthService {
         if (!errorRes.error || !errorRes.error.error) {
           return throwError(errorMessage);
         }
-        switch (errorRes.error.error.message) {
-          case 'EMAIL_EXISTS':
-            errorMessage = 'This email exists already.';
-        }
+        errorMessage = this.makeErrorMessage(errorRes.error.error.message, errorMessage);
         return throwError(errorMessage);
       })
-    );
+    )
   }
 
-  login(email: string, password: string) {
-    const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.apiKey}`;
-    return this.http.post<AuthResponseData>(
-      url,
-      {
-        email: email,
-        password: password,
-        returnSecureToken: true
-      }
-    )
+  private makeErrorMessage(errorMessage: string, returnMessage: string) {
+    switch (errorMessage) {
+      case 'EMAIL_EXISTS':
+        returnMessage = 'This email exists already.';
+        break;
+      case 'INVALID_PASSWORD':
+        returnMessage = 'The password is invalid.';
+        break;
+      case 'EMAIL_NOT_FOUND':
+        returnMessage = 'The email is not found.';
+    }
+    return returnMessage;
   }
 }
