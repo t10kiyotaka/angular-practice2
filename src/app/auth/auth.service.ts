@@ -41,7 +41,7 @@ export class AuthService {
     )
     .pipe(
       catchError(this.handleError),
-      tap(this.buildUser)
+      tap(resDate => this.buildUser(resDate))
     )
   }
 
