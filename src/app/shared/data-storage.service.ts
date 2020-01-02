@@ -22,21 +22,17 @@ export class DataStorageService {
   }
 
   fetchRecipes() {
-    return this.authService.user.pipe(
-      take(1),
-      exhaustMap(user => {
-        return this.http.get<Recipe[]>(this.url,
-          { params: new HttpParams().set('auth', user.token) })
-      }),
-      map(recipes => {
-        return recipes.map(recipe => {
-          const ingredients: Ingredient[] = recipe.ingredients ? recipe.ingredients : [];
-          return {...recipe, ingredients: ingredients}
+    return this.http.get<Recipe[]>(this.url)
+      .pipe(
+        map(recipes => {
+          return recipes.map(recipe => {
+            const ingredients: Ingredient[] = recipe.ingredients ? recipe.ingredients : [];
+            return {...recipe, ingredients: ingredients}
+          })
+        }),
+        tap(recipes => {
+          this.recipeService.setRecipes(recipes);
         })
-      }),
-      tap(recipes => {
-        this.recipeService.setRecipes(recipes);
-      })
-    );
+      );
   }
 }
