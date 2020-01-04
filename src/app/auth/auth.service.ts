@@ -18,6 +18,7 @@ export interface AuthResponseData {
 export class AuthService {
   apiKey = 'AIzaSyD2LuhpYrAoJspCizXQmIwL02aVyEBuF0k';
   user = new BehaviorSubject<User>(null);
+  tokenExpirationTimer: any;
 
   constructor(private http: HttpClient,
               private router: Router) {}
@@ -36,14 +37,27 @@ export class AuthService {
     this.user.next(null);
     localStorage.removeItem('userData');
     this.router.navigate(['/auth']);
+    if (this.tokenExpirationTimer) {
+      clearTimeout(this.tokenExpirationTimer);
+    }
   }
 
   autoLogin() {
-    const userData: UserJson = JSON.parse(localStorage.getItem('userData'));
+    const userData: UserJson  = JSON.parse(localStorage.getItem('userData'));
     if (!userData) return;
 
     const loadedUser = User.fromJson(userData);
-    if (loadedUser.token) this.user.next(loadedUser);
+    if (loadedUser.token) {
+      this.user.next(loadedUser);
+      const expirationDuration = loadedUser._tokenExpirationDate.getTime() - new Date().getTime();
+      this.autoLogout(expirationDuration);
+    }
+  }
+
+  autoLogout(expirationDuration: number) {
+    this.tokenExpirationTimer = setTimeout(() => {
+      this.logout();
+    }, expirationDuration)
   }
 
   private auth(email: string, password: string, url: string): Observable<AuthResponseData> {
@@ -65,13 +79,12 @@ export class AuthService {
     const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
     const user = new User(resData.email, resData.localId, resData.idToken, expiresDate);
     this.user.next(user);
+    this.autoLogout(+resData.expiresIn * 1000);
     localStorage.setItem('userData', JSON.stringify(user));
   }
 
   private handleError(errorRes: HttpErrorResponse) {
     let errorMessage = 'An unknown error occurred!';
-    console.log(errorRes.error.error);
-    console.log(errorRes.error);
     if (!errorRes.error || !errorRes.error.error) {
       return throwError(errorMessage);
     }
