@@ -47,11 +47,7 @@ export class AuthService {
     if (!userData) return;
 
     const loadedUser = User.fromJson(userData);
-    if (loadedUser.token) {
-      this.user.next(loadedUser);
-      const expirationDuration = loadedUser._tokenExpirationDate.getTime() - new Date().getTime();
-      this.autoLogout(expirationDuration);
-    }
+    if (loadedUser.token) this.handleAuthentication(loadedUser);
   }
 
   autoLogout(expirationDuration: number) {
@@ -71,16 +67,20 @@ export class AuthService {
     )
     .pipe(
       catchError(this.handleError),
-      tap(resDate => this.handleAuthentication(resDate))
+      tap(resData => this.handleAuthentication(this.buildUser(resData)))
     )
   }
 
-  private handleAuthentication(resData: AuthResponseData) {
-    const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
-    const user = new User(resData.email, resData.localId, resData.idToken, expiresDate);
+  private handleAuthentication(user: User) {
     this.user.next(user);
-    this.autoLogout(+resData.expiresIn * 1000);
+    const expirationDuration = user._tokenExpirationDate.getTime() - new Date().getTime();
+    this.autoLogout(expirationDuration);
     localStorage.setItem('userData', JSON.stringify(user));
+  }
+
+  private buildUser(resData: AuthResponseData): User {
+    const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
+    return new User(resData.email, resData.localId, resData.idToken, expiresDate);
   }
 
   private handleError(errorRes: HttpErrorResponse) {
