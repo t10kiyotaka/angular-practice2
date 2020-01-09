@@ -1,9 +1,10 @@
-import { Component, ComponentFactoryResolver, OnInit } from '@angular/core';
+import { Component, ComponentFactoryResolver, OnInit, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { AuthResponseData, AuthService } from './auth.service';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { AlertComponent } from '../shared/alert/alert.component';
+import { PlaceholderDirective } from '../shared/placeholder/placeholder.directive';
 
 @Component({
   selector: 'app-auth',
@@ -14,6 +15,7 @@ export class AuthComponent implements OnInit {
   isLoginMode = true;
   isLoading = false;
   error = null;
+  @ViewChild(PlaceholderDirective, {static: false})
 
   constructor(
     private authService: AuthService,
