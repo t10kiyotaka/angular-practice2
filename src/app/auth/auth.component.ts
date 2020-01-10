@@ -15,7 +15,7 @@ export class AuthComponent implements OnInit {
   isLoginMode = true;
   isLoading = false;
   error = null;
-  @ViewChild(PlaceholderDirective, {static: false})
+  @ViewChild(PlaceholderDirective, {static: false}) alertHost: PlaceholderDirective;
 
   constructor(
     private authService: AuthService,
@@ -57,6 +57,7 @@ export class AuthComponent implements OnInit {
       errorMessage => {
         console.log(errorMessage);
         this.error = errorMessage;
+        this.showErrorAlert(errorMessage);
         this.isLoading = false;
       }
     );
@@ -66,10 +67,13 @@ export class AuthComponent implements OnInit {
     this.error = null;
   }
 
-  private showErrorAlert() {
+  private showErrorAlert(message: string) {
     const alertCmp = this.componentFactoryResolver.resolveComponentFactory(
       AlertComponent
     );
+    const hostViewContainerRef = this.alertHost.viewContainerRef;
+    hostViewContainerRef.clear();
+    hostViewContainerRef.createComponent(alertCmp);
   }
 
 }
