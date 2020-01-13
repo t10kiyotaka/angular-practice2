@@ -37,7 +37,7 @@ import { RecipesModule } from './recipes/recipes.module';
     AppRoutingModule,
     ReactiveFormsModule,
     HttpClientModule,
-    RecipesModule
+    RecipesModule,
   ],
   providers: [
     ShoppingListService,

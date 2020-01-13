@@ -8,6 +8,7 @@ import { RecipeEditComponent } from './recipe-edit/recipe-edit.component';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule } from '@angular/forms';
+import { RecipesRoutingModule } from '../auth/recipes-routing.module';
 
 
 const RECIPES_MODULE = [
@@ -22,7 +23,12 @@ const RECIPES_MODULE = [
 
 @NgModule({
   declarations: [...RECIPES_MODULE],
-  imports: [RouterModule, CommonModule, ReactiveFormsModule],
+  imports: [
+    RouterModule,
+    CommonModule,
+    ReactiveFormsModule,
+    RecipesRoutingModule
+  ],
   exports: [...RECIPES_MODULE]
 })
 export class RecipesModule {
