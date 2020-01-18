@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, throwError } from 'rxjs';
 import { catchError, tap } from 'rxjs/operators';
 import { User, UserJson } from './user.model';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export interface AuthResponseData {
   idToken: string;
@@ -16,7 +17,7 @@ export interface AuthResponseData {
 
 @Injectable({providedIn: 'root'})
 export class AuthService {
-  apiKey = 'AIzaSyD2LuhpYrAoJspCizXQmIwL02aVyEBuF0k';
+  apiKey = environment.firebaseAPIKey;
   user = new BehaviorSubject<User>(null);
   tokenExpirationTimer: any;
 
