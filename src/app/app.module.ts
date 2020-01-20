@@ -9,6 +9,8 @@ import { AppRoutingModule } from "./app-routing.module";
 import { AlertComponent } from './shared/alert/alert.component';
 import { SharedModule } from './shared/shared.module';
 import { CoreModule } from './core.module';
+import { StoreModule } from '@ngrx/store';
+import { shoppingListReducer } from './shopping-list/store/shopping-list.reducer';
 
 @NgModule({
   declarations: [
@@ -24,6 +26,7 @@ import { CoreModule } from './core.module';
     HttpClientModule,
     SharedModule,
     CoreModule,
+    StoreModule.forRoot({shoppingList: shoppingListReducer})
   ],
   bootstrap: [AppComponent],
   entryComponents: [AlertComponent]
