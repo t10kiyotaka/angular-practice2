@@ -5,6 +5,9 @@ import { catchError, tap } from 'rxjs/operators';
 import { User, UserJson } from './user.model';
 import { Router } from '@angular/router';
 import { environment } from '../../environments/environment';
+import { Store } from '@ngrx/store';
+import * as fromApp from '../store/app.reducer';
+import * as AuthActions from './store/auth.action';
 
 export interface AuthResponseData {
   idToken: string;
@@ -18,11 +21,11 @@ export interface AuthResponseData {
 @Injectable({providedIn: 'root'})
 export class AuthService {
   apiKey = environment.firebaseAPIKey;
-  user = new BehaviorSubject<User>(null);
   tokenExpirationTimer: any;
 
   constructor(private http: HttpClient,
-              private router: Router) {}
+              private router: Router,
+              private store: Store<fromApp.AppState>) {}
 
   signUp(email: string, password: string): Observable<AuthResponseData> {
     const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.apiKey}`;
@@ -35,7 +38,7 @@ export class AuthService {
   }
 
   logout() {
-    this.user.next(null);
+    this.store.dispatch(new AuthActions.Logout());
     localStorage.removeItem('userData');
     this.router.navigate(['/auth']);
     if (this.tokenExpirationTimer) {
@@ -73,7 +76,12 @@ export class AuthService {
   }
 
   private handleAuthentication(user: User) {
-    this.user.next(user);
+    this.store.dispatch(new AuthActions.Login({
+      email: user.email,
+      userId: user.id,
+      token: user.token,
+      expirationDate: user._tokenExpirationDate
+    }));
     const expirationDuration = user._tokenExpirationDate.getTime() - new Date().getTime();
     this.autoLogout(expirationDuration);
     localStorage.setItem('userData', JSON.stringify(user));
