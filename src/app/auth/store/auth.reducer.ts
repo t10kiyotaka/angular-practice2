@@ -35,7 +35,7 @@ export function authReducer(
       return {
         ...state,
         user: null
-      }
+      };
     case AuthActions.LOGIN_START:
       return {
         ...state,
