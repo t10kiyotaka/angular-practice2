@@ -30,8 +30,4 @@ export class LoginFail implements Action {
   constructor(public payload: string) {}
 }
 
-export type AuthActions =
-  Login
-  | Logout
-  | LoginStart
-  | LoginFail;
+export type AuthActions = Login | Logout | LoginStart | LoginFail;

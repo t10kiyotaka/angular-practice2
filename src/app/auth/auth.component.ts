@@ -64,24 +64,24 @@ export class AuthComponent implements OnInit, OnDestroy {
   }
 
   subscribeAuthObs(authObs: Observable<AuthResponseData>) {
-    // authObs.subscribe(
-    //   (response: AuthResponseData) => {
-    //     console.log(response);
-    //     this.isLoading = false;
-    //     this.route.navigate(['/recipes']);
-    //   },
-    //   errorMessage => {
-    //     console.log(errorMessage);
-    //     this.error = errorMessage;
-    //     this.showErrorAlert(errorMessage);
-    //     this.isLoading = false;
-    //   }
-    // );
+    authObs.subscribe(
+      (response: AuthResponseData) => {
+        console.log(response);
+        this.isLoading = false;
+        this.route.navigate(['/recipes']);
+      },
+      errorMessage => {
+        console.log(errorMessage);
+        this.error = errorMessage;
+        // this.showErrorAlert(errorMessage);
+        this.isLoading = false;
+      }
+    );
   }
 
-  // handleError() {
-  //   this.error = null;
-  // }
+  handleError() {
+    this.error = null;
+  }
   //
   // private showErrorAlert(message: string) {
   //   const alertCmpFactory = this.componentFactoryResolver.resolveComponentFactory(

@@ -59,9 +59,11 @@ export class AuthEffects {
   );
 
 
-  constructor(private actions$: Actions,
-              private http: HttpClient,
-              private router: Router) {}
+  constructor(
+    private actions$: Actions,
+    private http: HttpClient,
+    private router: Router
+  ) {}
 
 
   private handleError(errorRes: HttpErrorResponse): Observable<LoginFail> {
