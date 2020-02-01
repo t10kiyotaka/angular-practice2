@@ -1,10 +1,10 @@
 import { Actions, Effect, ofType } from '@ngrx/effects';
 import * as AuthActions from './auth.action';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
 import { AuthResponseData } from '../auth.service';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { LoginFail } from './auth.action';
@@ -36,21 +36,23 @@ export class AuthEffects {
         }
       )
       .pipe(
-        map(resData => {
+        map((resData: AuthResponseData) => {
           const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
           return new AuthActions.Login({
             email: resData.email,
             userId: resData.localId,
             token: resData.idToken,
             expirationDate: expiresDate
-          })
+          });
         }),
-        catchError(errorRes => this.handleError(errorRes))
-      )
+        catchError(errorRes => {
+          return of(this.handleError(errorRes));
+        })
+      );
     })
   );
 
-  @Effect()
+  @Effect({ dispatch: false })
   authSuccess = this.actions$.pipe(
     ofType(AuthActions.LOGIN),
     tap(() => {
@@ -58,25 +60,23 @@ export class AuthEffects {
     })
   );
 
-
   constructor(
     private actions$: Actions,
     private http: HttpClient,
     private router: Router
   ) {}
 
-
-  private handleError(errorRes: HttpErrorResponse): Observable<LoginFail> {
+  private handleError(errorRes: HttpErrorResponse): LoginFail {
     let errorMessage = 'An unknown error occurred!';
     if (!errorRes.error || !errorRes.error.error) {
-      return of(new AuthActions.LoginFail(errorMessage));
+      return new AuthActions.LoginFail(errorMessage);
     }
-    errorMessage = AuthEffects.makeErrorMessage(errorRes.error.error.message) || errorMessage;
-    return of(new AuthActions.LoginFail(errorMessage));
+    errorMessage = AuthEffects.makeErrorMessage(errorRes.error.error.message, errorMessage);
+    return new AuthActions.LoginFail(errorMessage);
   }
 
-  private static makeErrorMessage(errorMessage: string) {
-    let returnMessage;
+  private static makeErrorMessage(errorMessage: string, defaultMessage: string): string {
+    let returnMessage = defaultMessage;
     switch (errorMessage) {
       case 'EMAIL_EXISTS':
         returnMessage = 'This email exists already.';

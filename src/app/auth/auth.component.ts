@@ -3,7 +3,6 @@ import { NgForm } from '@angular/forms';
 import { AuthResponseData, AuthService } from './auth.service';
 import { Observable, Subscription } from 'rxjs';
 import { Router } from '@angular/router';
-import { AlertComponent } from '../shared/alert/alert.component';
 import { PlaceholderDirective } from '../shared/placeholder/placeholder.directive';
 import { Store } from '@ngrx/store';
 import * as fromApp from '../store/app.reducer';
@@ -14,7 +13,7 @@ import * as AuthActions from './store/auth.action';
   templateUrl: './auth.component.html',
   styleUrls: ['./auth.component.css']
 })
-export class AuthComponent implements OnInit, OnDestroy {
+export class AuthComponent implements OnDestroy, OnInit {
   isLoginMode = true;
   isLoading = false;
   error = null;
@@ -23,15 +22,15 @@ export class AuthComponent implements OnInit, OnDestroy {
 
   constructor(
     private authService: AuthService,
-    private route: Router,
+    private router: Router,
     private componentFactoryResolver: ComponentFactoryResolver,
     private store: Store<fromApp.AppState>
   ) { }
 
   ngOnInit() {
-    this.store.select('auth').subscribe(authData => {
-      this.isLoading = authData.isLoading;
-      this.error = authData.authError;
+    this.store.select('auth').subscribe(authState => {
+      this.isLoading = authState.isLoading;
+      this.error = authState.authError;
     });
   }
 
@@ -59,30 +58,30 @@ export class AuthComponent implements OnInit, OnDestroy {
     } else {
       authObs = this.authService.signUp(email, password)
     }
-    this.subscribeAuthObs(authObs);
+    // this.subscribeAuthObs(authObs);
     form.reset();
   }
 
-  subscribeAuthObs(authObs: Observable<AuthResponseData>) {
-    authObs.subscribe(
-      (response: AuthResponseData) => {
-        console.log(response);
-        this.isLoading = false;
-        this.route.navigate(['/recipes']);
-      },
-      errorMessage => {
-        console.log(errorMessage);
-        this.error = errorMessage;
-        // this.showErrorAlert(errorMessage);
-        this.isLoading = false;
-      }
-    );
-  }
+  // subscribeAuthObs(authObs: Observable<AuthResponseData>) {
+  //   authObs.subscribe(
+  //     (response: AuthResponseData) => {
+  //       console.log(response);
+  //       this.isLoading = false;
+  //       this.route.navigate(['/recipes']);
+  //     },
+  //     errorMessage => {
+  //       console.log(errorMessage);
+  //       this.error = errorMessage;
+  //       this.showErrorAlert(errorMessage);
+  //       this.isLoading = false;
+  //     }
+  //   );
+  // }
 
   handleError() {
     this.error = null;
   }
-  //
+
   // private showErrorAlert(message: string) {
   //   const alertCmpFactory = this.componentFactoryResolver.resolveComponentFactory(
   //     AlertComponent
