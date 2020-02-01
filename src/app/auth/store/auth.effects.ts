@@ -2,11 +2,12 @@ import { Actions, Effect, ofType } from '@ngrx/effects';
 import * as AuthActions from './auth.action';
 import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { AuthResponseData } from '../auth.service';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
 import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { LoginFail } from './auth.action';
 
 export interface AuthResponseData {
   idToken: string;
@@ -36,7 +37,7 @@ export class AuthEffects {
       )
       .pipe(
         map((resData: AuthResponseData) => {
-          const expiresDate = new Date(new Date().getTime() + +resData.ex * 1000);
+          const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
           return new AuthActions.Login({
             email: resData.email,
             userId: resData.localId,
@@ -44,9 +45,8 @@ export class AuthEffects {
             expirationDate: expiresDate
           });
         }),
-        catchError(error => {
-          return new AuthActions.LoginFail(error);
-          return of();
+        catchError(errorRes => {
+          return of(this.handleError(errorRes));
         })
       );
     })
@@ -65,4 +65,28 @@ export class AuthEffects {
     private http: HttpClient,
     private router: Router
   ) {}
+
+  private handleError(errorRes: HttpErrorResponse): LoginFail {
+    let errorMessage = 'An unknown error occurred!';
+    if (!errorRes.error || !errorRes.error.error) {
+      return new AuthActions.LoginFail(errorMessage);
+    }
+    errorMessage = AuthEffects.makeErrorMessage(errorRes.error.error.message, errorMessage);
+    return new AuthActions.LoginFail(errorMessage);
+  }
+
+  private static makeErrorMessage(errorMessage: string, defaultMessage: string): string {
+    let returnMessage = defaultMessage;
+    switch (errorMessage) {
+      case 'EMAIL_EXISTS':
+        returnMessage = 'This email exists already.';
+        break;
+      case 'INVALID_PASSWORD':
+        returnMessage = 'The password is invalid.';
+        break;
+      case 'EMAIL_NOT_FOUND':
+        returnMessage = 'The email is not found.';
+    }
+    return returnMessage;
+  }
 }
