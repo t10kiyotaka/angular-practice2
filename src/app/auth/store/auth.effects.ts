@@ -18,16 +18,6 @@ export interface AuthResponseData {
   registered?: boolean;
 }
 
-const handlAuthentication = (resData: AuthResponseData) => {
-  const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
-  return new AuthActions.AuthenticateSuccess({
-    email: resData.email,
-    userId: resData.localId,
-    token: resData.idToken,
-    expirationDate: expiresDate
-  });
-};
-
 @Injectable()
 export class AuthEffects {
   apiKey = environment.firebaseAPIKey;
@@ -37,21 +27,10 @@ export class AuthEffects {
     ofType(AuthActions.SIGNUP_START),
     switchMap((signUpAction: AuthActions.SignUpStart) => {
       const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.apiKey}`;
-      return this.http.post<AuthResponseData>(
-        url,
-        {
-          email: signUpAction.payload.email,
-          password: signUpAction.payload.password,
-          returnSecureToken: true
-        }
-      )
-      .pipe(
-        map((resData: AuthResponseData) => {
-          return handlAuthentication(resData);
-        }),
-        catchError(errorRes => {
-          return of(this.handleError(errorRes));
-        })
+      return this.handleAuth(
+        signUpAction.payload.email,
+        signUpAction.payload.password,
+        url
       )
     })
   );
@@ -61,22 +40,11 @@ export class AuthEffects {
     ofType(AuthActions.LOGIN_START),
     switchMap((authData: AuthActions.LoginStart) => {
       const url = `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${this.apiKey}`;
-      return this.http.post<AuthResponseData>(
-        url,
-        {
-          email: authData.payload.email,
-          password: authData.payload.password,
-          returnSecureToken: true
-        }
+      return this.handleAuth(
+        authData.payload.email,
+        authData.payload.password,
+        url
       )
-      .pipe(
-        map((resData: AuthResponseData) => {
-          return handlAuthentication(resData);
-        }),
-        catchError(errorRes => {
-          return of(this.handleError(errorRes));
-        })
-      );
     })
   );
 
@@ -117,4 +85,33 @@ export class AuthEffects {
     }
     return returnMessage;
   }
+
+  private handleAuth(email: string, password: string, url: string) {
+    return this.http.post<AuthResponseData>(
+      url,
+      {
+        email: email,
+        password: password,
+        returnSecureToken: true
+      }
+    )
+      .pipe(
+        map((resData: AuthResponseData) => {
+          return this.handleAuthSuccess(resData);
+        }),
+        catchError(errorRes => {
+          return of(this.handleError(errorRes));
+        })
+      )
+  }
+
+  private handleAuthSuccess = (resData: AuthResponseData) => {
+    const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
+    return new AuthActions.AuthenticateSuccess({
+      email: resData.email,
+      userId: resData.localId,
+      token: resData.idToken,
+      expirationDate: expiresDate
+    });
+  };
 }
