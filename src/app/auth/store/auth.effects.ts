@@ -8,6 +8,7 @@ import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthenticateFail } from './auth.action';
+import { User, UserJson } from '../user.model';
 
 export interface AuthResponseData {
   idToken: string;
@@ -49,10 +50,31 @@ export class AuthEffects {
   );
 
   @Effect({ dispatch: false })
-  authSuccess = this.actions$.pipe(
-    ofType(AuthActions.AUTHENTICATE_SUCCESS),
+  authRedirect = this.actions$.pipe(
+    ofType(AuthActions.AUTHENTICATE_SUCCESS, AuthActions.LOGOUT),
     tap(() => {
       this.router.navigate(['/']);
+    })
+  );
+
+  @Effect({ dispatch: false })
+  authLogout = this.actions$.pipe(
+    ofType(AuthActions.LOGOUT),
+    tap(() => {
+      localStorage.removeItem('userData');
+    })
+  );
+
+  @Effect()
+  autoLogin = this.actions$.pipe(
+    ofType(AuthActions.AUTO_LOGIN),
+    map(() => {
+      const userData: UserJson  = JSON.parse(localStorage.getItem('userData'));
+      if (!userData) return { type: 'DUMMY' };
+
+      const loadedUser = User.fromJson(userData);
+      if (loadedUser.token) return this.handleAutoLogin(loadedUser);
+      else return { type: 'DUMMY' };
     })
   );
 
@@ -107,6 +129,8 @@ export class AuthEffects {
 
   private handleAuthSuccess = (resData: AuthResponseData) => {
     const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
+    const user = new User(resData.email, resData.localId, resData.idToken, expiresDate);
+    localStorage.setItem('userData', JSON.stringify(user));
     return new AuthActions.AuthenticateSuccess({
       email: resData.email,
       userId: resData.localId,
@@ -114,4 +138,20 @@ export class AuthEffects {
       expirationDate: expiresDate
     });
   };
+
+  private handleAutoLogin(user: User) {
+    return new AuthActions.AuthenticateSuccess({
+      email: user.email,
+      userId: user.id,
+      token: user.token,
+      expirationDate: user._tokenExpirationDate
+    });
+    // const expirationDuration = user._tokenExpirationDate.getTime() - new Date().getTime();
+    // this.autoLogout(expirationDuration);
+  }
+
+  private buildUser(resData: AuthResponseData): User {
+    const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
+    return new User(resData.email, resData.localId, resData.idToken, expiresDate);
+  }
 }
