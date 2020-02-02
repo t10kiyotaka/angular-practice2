@@ -7,7 +7,7 @@ import { environment } from '../../../environments/environment';
 import { of } from 'rxjs';
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
-import { LoginFail } from './auth.action';
+import { AuthenticateFail } from './auth.action';
 
 export interface AuthResponseData {
   idToken: string;
@@ -18,9 +18,43 @@ export interface AuthResponseData {
   registered?: boolean;
 }
 
+const handlAuthentication = (resData: AuthResponseData) => {
+  const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
+  return new AuthActions.AuthenticateSuccess({
+    email: resData.email,
+    userId: resData.localId,
+    token: resData.idToken,
+    expirationDate: expiresDate
+  });
+};
+
 @Injectable()
 export class AuthEffects {
   apiKey = environment.firebaseAPIKey;
+
+  @Effect()
+  authSignUp = this.actions$.pipe(
+    ofType(AuthActions.SIGNUP_START),
+    switchMap((signUpAction: AuthActions.SignUpStart) => {
+      const url = `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${this.apiKey}`;
+      return this.http.post<AuthResponseData>(
+        url,
+        {
+          email: signUpAction.payload.email,
+          password: signUpAction.payload.password,
+          returnSecureToken: true
+        }
+      )
+      .pipe(
+        map((resData: AuthResponseData) => {
+          return handlAuthentication(resData);
+        }),
+        catchError(errorRes => {
+          return of(this.handleError(errorRes));
+        })
+      )
+    })
+  );
 
   @Effect()
   authLogin = this.actions$.pipe(
@@ -37,13 +71,7 @@ export class AuthEffects {
       )
       .pipe(
         map((resData: AuthResponseData) => {
-          const expiresDate = new Date(new Date().getTime() + +resData.expiresIn * 1000);
-          return new AuthActions.Login({
-            email: resData.email,
-            userId: resData.localId,
-            token: resData.idToken,
-            expirationDate: expiresDate
-          });
+          return handlAuthentication(resData);
         }),
         catchError(errorRes => {
           return of(this.handleError(errorRes));
@@ -54,7 +82,7 @@ export class AuthEffects {
 
   @Effect({ dispatch: false })
   authSuccess = this.actions$.pipe(
-    ofType(AuthActions.LOGIN),
+    ofType(AuthActions.AUTHENTICATE_SUCCESS),
     tap(() => {
       this.router.navigate(['/']);
     })
@@ -66,13 +94,13 @@ export class AuthEffects {
     private router: Router
   ) {}
 
-  private handleError(errorRes: HttpErrorResponse): LoginFail {
+  private handleError(errorRes: HttpErrorResponse): AuthenticateFail {
     let errorMessage = 'An unknown error occurred!';
     if (!errorRes.error || !errorRes.error.error) {
-      return new AuthActions.LoginFail(errorMessage);
+      return new AuthActions.AuthenticateFail(errorMessage);
     }
     errorMessage = AuthEffects.makeErrorMessage(errorRes.error.error.message, errorMessage);
-    return new AuthActions.LoginFail(errorMessage);
+    return new AuthActions.AuthenticateFail(errorMessage);
   }
 
   private static makeErrorMessage(errorMessage: string, defaultMessage: string): string {

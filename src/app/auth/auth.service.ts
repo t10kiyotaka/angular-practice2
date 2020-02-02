@@ -76,7 +76,7 @@ export class AuthService {
   }
 
   private handleAuthentication(user: User) {
-    this.store.dispatch(new AuthActions.Login({
+    this.store.dispatch(new AuthActions.AuthenticateSuccess({
       email: user.email,
       userId: user.id,
       token: user.token,
